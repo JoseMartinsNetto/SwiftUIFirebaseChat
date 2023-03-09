@@ -29,7 +29,6 @@ struct LoginView: View {
                         Text("Choose any option")
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .padding()
                     
                     if !isLoginMode {
                         
@@ -144,10 +143,30 @@ struct LoginView: View {
                 
                 self.hasError = false
                 self.message = "Successfuly uploaded image! \(url?.absoluteString ?? "")"
+                
+                guard let url = url else { return }
+                self.saveUserInfo(url)
             }
-            
-            
         }
+    }
+    
+    private func saveUserInfo(_ url: URL) {
+        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
+        
+        let data = User(uid: uid, email: self.email, imageUrl: url.absoluteString)
+        
+        FirebaseManager.shared.firestore.collection("users")
+            .document(uid)
+            .setData(data.asDictionary()) { error in
+                guard error == nil else {
+                    self.message = "Failed To save user information! \(error as Any) "
+                    self.hasError = true
+                    return
+                }
+                
+                print("Success")
+                
+            }
     }
     
     private func login() {
@@ -163,6 +182,7 @@ struct LoginView: View {
             self.message = "SuccessFully login user!"
         }
     }
+    
 }
 
 struct ContentView_Previews: PreviewProvider {
